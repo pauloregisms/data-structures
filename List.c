@@ -175,6 +175,7 @@ void *List_remove(List* list, void *value, int (*compare)(void*, void*)) {
 				nodePrevious->next = node->next;
 			}
 
+			list->length--;
 			free(node);
 			return valueFound;
 		}
