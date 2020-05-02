@@ -1,26 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "List.h"
 #include "Graph.h"
 
+typedef struct Graph Graph;
 typedef struct Node Node;
-typedef struct Edge Edge;
-
-struct Edge {
-	void *value;
-	Edge *next;
-	Node *target;
-};
 
 struct Node {
 	void *value;
-	Node *next;
-	Edge *firstEdge;
+	List *edges;
 };
 
 struct Graph {
-	Node *firstNode;
 	int length;
+	List *nodes;
 };
 
 Graph *Graph_create() {
@@ -28,84 +22,191 @@ Graph *Graph_create() {
 
 	graph = (Graph*) malloc(sizeof(Graph));
 	
-	if (graph == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
-	}
+	assert(graph != NULL);
 	
 	graph->length = 0;
-	graph->firstNode = NULL;
+	graph->nodes = List_create();
 
 	return graph;
 }
 
-int  Graph_getLength(Graph *graph) {
-	
-	if (graph == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -1;
-	}
-	
-	return graph->length;
-}
-
-int Graph_insert(Graph *graph, void *value) {
+void Graph_insertNode(Graph *graph, void *value) {
 	Node *newNode = NULL;
 
-	if (graph == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -1;
-	}
-
-	if (value == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -2;
-	}
+	assert(graph != NULL);
+	assert(value != NULL);
 
 	newNode = (Node*) malloc(sizeof(Node));
-	
-	if (newNode == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -3;
-	}
+	assert(newNode != NULL);
 
 	newNode->value = value;
-	newNode->next = graph->firstNode;
-	
-	graph->firstNode = newNode;
-	graph->length++;
+	newNode->edges = List_create();
 
-	return 0;
+	List_pushFront(graph->nodes, newNode);
 }
 
-int Graph_delete(Graph *graph) {
+void *Graph_removeNode(Graph *graph, void *value, int (*compare)(void *, void *)) {
+	Node *node;
+	void *foundValue;
+	int count = 0;
+
+	assert(graph != NULL);
+	assert(value != NULL);
+	assert(compare != NULL);
+
+	node = (Node*) List_popFront(graph->nodes);
+
+	while (count < List_getLength(graph->nodes)) {
+
+		if (compare(node->value, value) == 0) {
+			return node->value;
+		}
+
+		List_pushBack(graph->nodes, node);
+		node = (Node*) List_popFront(graph->nodes);
+
+		count++;
+	}
+
+	return NULL;
+}
+
+void Graph_insertEdge(Graph *graph, void *origin, void *target, int (*compare)(void *, void *)) {
+	Node *node = NULL;
+	int count = 0;
+
+	assert(graph != NULL);
+	assert(origin != NULL);
+	assert(target != NULL);
+	assert(compare != NULL);
+
+	node = (Node*) List_popFront(graph->nodes);
+
+	while (count < List_getLength(graph->nodes)) {
+
+		if (compare(node->value, origin) == 0) {
+			List_pushFront(node->edges, target);
+			List_pushBack(graph->nodes, node);
+			break;
+		}
+
+		List_pushBack(graph->nodes, node);
+		node = (Node*) List_popFront(graph->nodes);
+
+		count++;
+	}
+}
+
+void Graph_removeEdge(Graph *graph, void *origin, void *target, int (*compare)(void *, void *)) {
 	Node *node = NULL;
 
-	if (graph == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -1;
+	assert(graph != NULL);
+	assert(origin != NULL);
+	assert(target != NULL);
+	assert(compare != NULL);
+
+	node = (Node*) List_find(graph->nodes, origin, compare);
+
+	assert(node != NULL);
+
+	List_remove(node->edges, target, compare);
+}
+
+int Graph_getLength(Graph *graph) {
+	
+	assert(graph != NULL);
+
+	return List_getLength(graph->nodes);
+}
+
+void Graph_delete(Graph *graph) {
+	Node *node;
+
+	assert(graph != NULL);
+
+	node = (Node*) List_popFront(graph->nodes);
+
+	while (node) {
+		List_delete(node->edges);
+		free(node);
+		node = (Node*) List_popFront(graph->nodes);
+		printf("--\n");
 	}
 
 	free(graph);
-	graph = NULL;
+}
+
+void print(void *v){
+	printf("%d", *((int*)v));
+}
+
+int compare(void *v_1, void *v_2) {
+	return *((int*)v_1) - *((int*)v_2);
+}
+
+void Graph_print(Graph *graph, void (*printValue)(void *)) {
+	Node *node;
+	void *edge;
+	int count = 0;
+
+	assert(graph != NULL);
+	assert(printValue != NULL);
+
+	node = (Node*) List_popFront(graph->nodes);
+
+	while (count < List_getLength(graph->nodes)) {
+		printf("(");
+		printValue(node->value);
+		printf(")");
+
+		edge = List_popFront(node->edges);
+
+		while (edge) {
+			printf("[");
+			printValue(edge);
+			printf("]");
+
+			List_pushBack(node->edges, edge);
+			edge = List_popFront(node->edges);
+		}
+
+		List_pushBack(graph->nodes, node);
+		node = (Node*) List_popFront(graph->nodes);
+		printf("\n");
+
+		count++;
+	}
+}
+
+int main() {
+	Graph *g = Graph_create();
+	int n[] = {1,2,3,4};
+
+	Graph_insertNode(g, &n[0]);
+	Graph_insertNode(g, &n[1]);
+	Graph_insertNode(g, &n[2]);
+	Graph_insertNode(g, &n[3]);
+
+	Graph_insertEdge(g, &n[0], &n[1], compare);
+	Graph_insertEdge(g, &n[0], &n[2], compare);
+	Graph_insertEdge(g, &n[0], &n[3], compare);
+
+	Graph_insertEdge(g, &n[1], &n[3], compare);
+
+	Graph_insertEdge(g, &n[2], &n[0], compare);
+	Graph_insertEdge(g, &n[2], &n[3], compare);
+
+	Graph_insertEdge(g, &n[3], &n[1], compare);
+	Graph_insertEdge(g, &n[3], &n[3], compare);
+
+	Graph_print(g, print);
 
 	return 0;
 }
 
 
-void  Graph_print(Graph *graph, void printValue(void*)) {
-	
-	if (graph == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
-	
-	if (printValue == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-2);
-	}
 
-}
 
-int Graph_createEdge(Graph *graph, void *nodeOrigin, void *nodeTarget);
-int Graph_removeEdge(Graph *graph, void *nodeOrigin, void *nodeTarget);
+
+
+

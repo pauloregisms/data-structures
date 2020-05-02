@@ -16,7 +16,7 @@ struct Node {
 	Node *prev;
 };
 
-static Node_create(void *value) {
+static Node *Node_create(void *value) {
 	Node *newNode = NULL;
 
 	if (value == NULL) { 
@@ -130,8 +130,6 @@ void List_pushBack(List *list, void *value) {
 	}
 
 	list->length++;
-
-	return 0;
 }
 
 void *List_popFront(List *list) {
@@ -143,14 +141,16 @@ void *List_popFront(List *list) {
 		exit(-1);
 	}
 
-	tempNode = list->first;
-	list->first = tempNode->next;
-	list->first->prev = NULL;
+	if (list->first) {
+		tempNode = list->first;
+		list->first = tempNode->next;
+		list->first->prev = NULL;
 
-	value = tempNode->value;
-	free(tempNode);
+		value = tempNode->value;
+		free(tempNode);
 
-	list->length--;
+		list->length--;
+	}
 
 	return value;
 }
@@ -235,7 +235,7 @@ void *List_find(List *list, void *value, int (*compare)(void *, void *)) {
 
 void *List_remove(List *list, void *value, int (*compare)(void *, void *)) {
 	Node *node = NULL;
-	void *value = NULL;
+	void *removedValue = NULL;
 
 	if (list == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
@@ -246,7 +246,7 @@ void *List_remove(List *list, void *value, int (*compare)(void *, void *)) {
 	
 	while (node) {
 		if (compare(node->value, value) == 0) {
-			value = node->value;
+			removedValue = node->value;
 			free(node);
 			list->length--;
 			break;		
@@ -254,7 +254,7 @@ void *List_remove(List *list, void *value, int (*compare)(void *, void *)) {
 		node = node->next;
 	}
 
-	return value;
+	return removedValue;
 }
 
 void List_print(List *list, void (*printValue)(void*)) {
