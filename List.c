@@ -1,213 +1,273 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "List.h"
 
 typedef struct Node Node;
 
-struct Node {
-	void *value;
-	Node *next;
-};
-
 struct List {
 	Node *first;
+	Node *last;
 	int length;
 };
+
+struct Node { 
+	void *value;
+	Node *next;
+	Node *prev;
+};
+
+static Node_create(void *value) {
+	Node *newNode = NULL;
+
+	if (value == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
+
+	newNode = (Node*) malloc(sizeof(Node));
+	
+	if (newNode == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
+
+	newNode->value = value;
+	newNode->prev = NULL;
+	newNode->next = NULL;
+
+	return newNode;
+}
 
 List *List_create() {
 	List *list = NULL;
 
 	list = (List*) malloc(sizeof(List));
-
-	if (list == NULL) {
+	
+	if (list == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
 		return NULL;
 	}
-	
-	list->first= NULL;
+
+	list->first = NULL;
+	list->last = NULL;
 	list->length = 0;
-	
-	return list;	
+
+	return list;
 }
 
-int List_delete(List *list) {
-	Node *node = NULL; 
-	Node *nodeAux = NULL;
+void List_delete(List *list) {
+	Node *node = NULL;
+	Node *tempNode = NULL;
 
-	if (list == NULL) {
+	if (list == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -1;
+		exit(-1);
 	}
-		
+
 	node = list->first;
 	
 	while (node) {
-		nodeAux = node->next;
+		tempNode = node->next;
 		free(node);
-		node = nodeAux;
+		node = tempNode;
 	}
-	
+
 	free(list);
-	list = NULL;
-
-	return 0;
 }
 
-int List_insert(List* list, void *value) {
+void List_pushFront(List *list, void *value) {
 	Node *newNode = NULL;
-	
-	if (list == NULL) {
+
+	if (list == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -1;
+		exit(-1);
+	}
+	
+	if (value == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
 	}
 
-	if (value == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -2;
-	}
-	
-	newNode = (Node*) malloc(sizeof(Node));
-	
-	if (newNode == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -3;
-	}
-	
-	newNode->value = value;
-	newNode->next = list->first;
-	list->first = newNode;
-	list->length++;
-	
-	return 0;
-}
-
-void *List_getFirst(List *list) {
-
-	if (list == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
-	}
+	newNode = Node_create(value);
 
 	if (list->first == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
+		list->first = newNode;
+		list->last = newNode;
+	}
+	else {
+		list->first->prev = newNode;
+		newNode->next = list->first;
+		list->first = newNode;
 	}
 
-	return list->first->value;
+	list->length++;
 }
 
-void *List_getLast(List *list) {
-	Node *node = NULL;
 
-	if (list == NULL) {
+void List_pushBack(List *list, void *value) {
+	Node *newNode = NULL;
+
+	if (list == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
+		exit(-1);
 	}
 
-	node = list->first;
+	if (value == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
+
+	newNode = Node_create(value);
+
+	if (list->last == NULL) {
+		list->first = newNode;
+		list->last = newNode;
+	}
+	else {
+		list->last->next = newNode;
+		newNode->prev = list->last;
+		list->last = newNode;
+	}
+
+	list->length++;
+
+	return 0;
+}
+
+void *List_popFront(List *list) {
+	Node *tempNode = NULL;
+	void *value = NULL;
+
+	if (list == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
+
+	tempNode = list->first;
+	list->first = tempNode->next;
+	list->first->prev = NULL;
+
+	value = tempNode->value;
+	free(tempNode);
+
+	list->length--;
+
+	return value;
+}
+
+void *List_popBack(List *list) {
+	Node *tempNode = NULL;
+	void *value = NULL;
+
+	if (list == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
+
+	tempNode = list->last;
+	list->last = tempNode->prev;
+	list->last->next = NULL;
+
+	value = tempNode->value;
+	free(tempNode);
+
+	list->length--;
+
+	return value;
+}
+
+void *List_getFront(List *list) {
 	
-	while (node->next)
-		node = node->next;
+	if (list == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
 
-	return node->value;
+	if (list->first != NULL)
+		return list->first->value;
+	else
+		return NULL;
 }
 
-void *List_find(List *list, void *value, int (*compare)(void*, void*)) {
-	Node *node = NULL;
-
-	if (list == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
-	}
-
-	if (value == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
-	}
-
-	if (compare == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
-	}
-
-	node = list->first;
+void *List_getBack(List *list) {
 	
-	while (node) {
-		if (compare(node->value, value) == 0)
-			return node->value;
-
-		node = node->next;
+	if (list == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
 	}
-
-	return NULL;
+	
+	if (list->last != NULL) 
+		return list->last->value;
+	else
+		return NULL;
 }
 
-void *List_remove(List* list, void *value, int (*compare)(void*, void*)) {
+int List_getLength(List *list) {
+	
+	if (list == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
+
+	return list->length;
+}
+
+
+void *List_find(List *list, void *value, int (*compare)(void *, void *)) {
 	Node *node = NULL;
-	Node *nodePrevious = NULL;
-	void *valueFound = NULL;
-
-	if (list == NULL) {
+	
+	if (list == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
-	}
-
-	if (value == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
-	}
-
-	if (compare == NULL) {
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
+		exit(-1);
 	}
 
 	node = list->first;
 	
 	while (node) {
 		if (compare(node->value, value) == 0) {
-			valueFound = node->value;
-
-			if (node == list->first) {
-				list->first = node->next;
-			}
-			else {
-				nodePrevious->next = node->next;
-			}
-
-			list->length--;
-			free(node);
-			return valueFound;
+			return node->value;	
 		}
-
-		nodePrevious = node;
 		node = node->next;
 	}
 
 	return NULL;
 }
 
-int List_getLength(List *list) {
+void *List_remove(List *list, void *value, int (*compare)(void *, void *)) {
+	Node *node = NULL;
+	void *value = NULL;
 
-	if (list == NULL) {
+	if (list == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -1;
+		exit(-1);
 	}
 
-	return list->length;
+	node = list->first;
+	
+	while (node) {
+		if (compare(node->value, value) == 0) {
+			value = node->value;
+			free(node);
+			list->length--;
+			break;		
+		}
+		node = node->next;
+	}
+
+	return value;
 }
 
-int List_print(List *list, void (*printValue)(void *)) {
+void List_print(List *list, void (*printValue)(void*)) {
 	Node *node = NULL;
 
-	if (list == NULL) {
+	if (list == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -1;
+		exit(-1);
 	}
-	
-	if (printValue == NULL) {
+
+	if (printValue == NULL) { 
 		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return -2;
+		exit(-1);
 	}
 
 	node = list->first;
@@ -218,4 +278,29 @@ int List_print(List *list, void (*printValue)(void *)) {
 	}
 	
 	printf("\n");
+}
+
+List *List_map(List *list, void *value, void* (*callback)(void*, void*)) {
+	Node *node = NULL;
+	List *listMap = NULL;
+
+	if (list == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
+
+	if (callback == NULL) { 
+		printf("Error: %s, %d\n", __FILE__, __LINE__);
+		exit(-1);
+	}
+
+	listMap = List_create();
+	node = list->first;
+
+	while (node) {
+		List_pushBack(listMap, callback(node->value, value));
+		node = node->next;
+	}
+
+	return listMap;
 }

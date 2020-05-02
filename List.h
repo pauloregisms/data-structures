@@ -1,15 +1,19 @@
 typedef struct List List;
 
 List *List_create();
-int List_insert(List* list, void *value);
-int List_delete(List *list);
+void List_delete(List *List);
 
-void *List_find(List* list, void *value, int (*compare)(void*,void*));
-void *List_remove(List* list, void *value, int (*compare)(void*,void*));
+void List_pushBack(List *List, void *value);
+void List_pushFront(List *List, void *value);
 
-void *List_getFirst(List *list);
-void *List_getLast(List *list);
-int List_getLength(List *list);
+void *List_popBack(List *List);
+void *List_popFront(List *List);
 
-List *List_concat(List *list_1, List *list_2);
-int List_print(List *list, void (*printValue)(void *));
+void *List_getFront(List *List);
+void *List_getBack(List *List);
+
+int List_getLength(List *List);
+void *List_find(List *List, void *value, int (*compare)(void *, void *));
+void *List_remove(List *List, void *value, int (*compare)(void *, void *));
+void List_print(List *List, void (*print)(void*));
+List *List_map(List *list, void *value, void* (*callback)(void*, void*));
