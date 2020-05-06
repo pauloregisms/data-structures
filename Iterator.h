@@ -1,3 +1,4 @@
-void *createIterator();
-void *getNext(void *item);
-int hasNext(void *item);
+typedef struct Iterator Iterator;
+
+void *Iterator_getNext(Iterator *);
+int Iterator_hasNext(Iterator *);

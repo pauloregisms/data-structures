@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
+#include "Container.h"
 #include "List.h"
 
 typedef struct Node Node;
@@ -7,6 +9,7 @@ typedef struct Node Node;
 struct List {
 	Node *first;
 	Node *last;
+	Node *iterator;
 	int length;
 };
 
@@ -16,20 +19,42 @@ struct Node {
 	Node *prev;
 };
 
+void *List_getNext(List *list) {
+	Node *node;
+
+	assert(list);
+
+	if (list->iterator)
+		list->iterator = list->iterator->next;
+	else
+		list->iterator = list->first;
+	
+	if (list->iterator)
+		return list->iterator->value;
+	else
+		return NULL;
+}
+
+int List_hasNext(List *list) {
+	assert(list);
+	if (list->iterator)
+		return list->iterator->next != NULL;
+	else
+		return 0;
+}
+
+void List_resetIterator(List *list) {
+	assert(list);
+	list->iterator = NULL;
+}
+
 static Node *Node_create(void *value) {
 	Node *newNode = NULL;
 
-	if (value == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(value);
 
 	newNode = (Node*) malloc(sizeof(Node));
-	
-	if (newNode == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(newNode);
 
 	newNode->value = value;
 	newNode->prev = NULL;
@@ -42,15 +67,12 @@ List *List_create() {
 	List *list = NULL;
 
 	list = (List*) malloc(sizeof(List));
-	
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		return NULL;
-	}
+	assert(list);
 
 	list->first = NULL;
 	list->last = NULL;
 	list->length = 0;
+	list->iterator = NULL;
 
 	return list;
 }
@@ -59,11 +81,7 @@ void List_delete(List *list) {
 	Node *node = NULL;
 	Node *tempNode = NULL;
 
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
-
+	assert(list);
 	node = list->first;
 	
 	while (node) {
@@ -78,15 +96,8 @@ void List_delete(List *list) {
 void List_pushFront(List *list, void *value) {
 	Node *newNode = NULL;
 
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
-	
-	if (value == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
+	assert(value);
 
 	newNode = Node_create(value);
 
@@ -107,15 +118,8 @@ void List_pushFront(List *list, void *value) {
 void List_pushBack(List *list, void *value) {
 	Node *newNode = NULL;
 
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
-
-	if (value == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
+	assert(value);
 
 	newNode = Node_create(value);
 
@@ -136,10 +140,7 @@ void *List_popFront(List *list) {
 	Node *tempNode = NULL;
 	void *value = NULL;
 
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
 
 	if (list->first) {
 		tempNode = list->first;
@@ -159,10 +160,7 @@ void *List_popBack(List *list) {
 	Node *tempNode = NULL;
 	void *value = NULL;
 
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
 
 	tempNode = list->last;
 	list->last = tempNode->prev;
@@ -178,10 +176,7 @@ void *List_popBack(List *list) {
 
 void *List_getFront(List *list) {
 	
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
 
 	if (list->first != NULL)
 		return list->first->value;
@@ -191,10 +186,7 @@ void *List_getFront(List *list) {
 
 void *List_getBack(List *list) {
 	
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
 	
 	if (list->last != NULL) 
 		return list->last->value;
@@ -204,10 +196,7 @@ void *List_getBack(List *list) {
 
 int List_getLength(List *list) {
 	
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
 
 	return list->length;
 }
@@ -215,10 +204,9 @@ int List_getLength(List *list) {
 void *List_find(List *list, void *value, int (*compare)(void *, void *)) {
 	Node *node = NULL;
 	
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
+	assert(value);
+	assert(compare);
 
 	node = list->first;
 	
@@ -236,38 +224,70 @@ void *List_remove(List *list, void *value, int (*compare)(void *, void *)) {
 	Node *node = NULL;
 	void *removedValue = NULL;
 
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
+	assert(value);
+	assert(compare);
 
 	node = list->first;
 	
 	while (node) {
 		if (compare(node->value, value) == 0) {
 			removedValue = node->value;
-			free(node);
-			list->length--;
-			break;		
+
+			/*   (L)
+			    /   \ 
+			    \   /
+			   <-[X]->  */
+			if (node == list->first && node == list->last) {
+				list->first = NULL;
+				list->last = NULL;
+				free(node);
+				return removedValue;
+			}
+
+			/*     ____(L)____
+			      /           \ 
+			      \           /
+		           <-[X]-> ... <-[ ]->  */
+			if (node == list->first && node != list->last) {
+				list->first = node->next;
+				node->next->prev = NULL;
+				free(node);
+				return removedValue;
+			}
+
+			/*     ____(L)____
+			      /           \ 
+			      \           /
+		           <-[ ]-> ... <-[X]->  */
+			if (node != list->first && node == list->last) {
+				list->last = node->prev;
+				node->prev->next = NULL;
+				free(node);
+				return removedValue;
+			}
+
+			/*     __________(L)__________
+			      /                       \ 
+			      \                       /
+		           <-[ ]-> ... <-[X]-> ... <-[ ]-> */
+			if (node != list->first && node != list->last) {
+				node->prev->next = node->next;
+				free(node);
+				return removedValue;
+			}
 		}
 		node = node->next;
 	}
 
-	return removedValue;
+	return NULL;
 }
 
 void List_print(List *list, void (*printValue)(void*)) {
 	Node *node = NULL;
 
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
-
-	if (printValue == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
+	assert(printValue);
 
 	node = list->first;
 
@@ -283,15 +303,8 @@ List *List_map(List *list, void *value, void* (*callback)(void*, void*)) {
 	Node *node = NULL;
 	List *listMap = NULL;
 
-	if (list == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
-
-	if (callback == NULL) { 
-		printf("Error: %s, %d\n", __FILE__, __LINE__);
-		exit(-1);
-	}
+	assert(list);
+	assert(callback);
 
 	listMap = List_create();
 	node = list->first;
@@ -303,3 +316,4 @@ List *List_map(List *list, void *value, void* (*callback)(void*, void*)) {
 
 	return listMap;
 }
+

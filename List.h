@@ -17,3 +17,7 @@ void *List_find(List *List, void *value, int (*compare)(void *, void *));
 void *List_remove(List *List, void *value, int (*compare)(void *, void *));
 void List_print(List *List, void (*print)(void*));
 List *List_map(List *list, void *value, void* (*callback)(void*, void*));
+
+void *List_getNext(List *list);
+int List_hasNext(List *list);
+void List_resetIterator(List *list);
