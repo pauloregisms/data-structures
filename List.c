@@ -212,7 +212,6 @@ int List_getLength(List *list) {
 	return list->length;
 }
 
-
 void *List_find(List *list, void *value, int (*compare)(void *, void *)) {
 	Node *node = NULL;
 	
