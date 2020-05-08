@@ -232,6 +232,7 @@ void *List_remove(List *list, void *value, int (*compare)(void *, void *)) {
 	while (node) {
 		if (compare(node->value, value) == 0) {
 			removedValue = node->value;
+			list->length--;
 
 			/*   (L)
 			    /   \ 
